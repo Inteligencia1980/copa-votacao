@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abaixo-Assinado — Copa</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;color:#1a1a1a;background:#f9f8f5;min-height:100vh;padding:16px 16px 60px}
+.page{display:none}.page.ativa{display:block}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+h3{font-size:15px;font-weight:500;margin-bottom:.75rem}
+p{font-size:14px;color:#6b7280;line-height:1.6}
+label{font-size:13px;color:#6b7280;display:block;margin-bottom:4px;margin-top:10px}
+input{width:100%;font-size:14px;margin-bottom:2px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none;font-family:inherit}
+input:focus{border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,117,.15)}
+.btn{width:100%;padding:10px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#1a1a1a;margin-top:10px;transition:background .15s;font-family:inherit}
+.btn:hover{background:#f3f4f6}
+.btn-g{background:#1D9E75;color:#fff;border-color:#1D9E75}.btn-g:hover{background:#0F6E56}
+.btn-r{background:#E24B4A;color:#fff;border-color:#E24B4A}.btn-r:hover{background:#A32D2D}
+.btn-disabled{background:#f3f4f6!important;color:#9ca3af!important;border-color:#e5e7eb!important;cursor:not-allowed!important;opacity:.7}
+.errmsg{font-size:12px;color:#E24B4A;min-height:16px;margin-bottom:4px}
+.info{background:#E6F1FB;color:#0C447C;border-radius:8px;padding:10px 12px;font-size:13px;margin:10px 0}
+.warn{background:#FAEEDA;color:#633806;border-radius:8px;padding:10px 12px;font-size:13px;margin:10px 0}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.stat{background:#f9f8f5;border-radius:8px;padding:12px;text-align:center}
+.stat-n{font-size:22px;font-weight:500}.stat-l{font-size:11px;color:#6b7280;margin-top:2px}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;display:inline-block}
+.b-g{background:#EAF3DE;color:#27500A}.b-r{background:#FCEBEB;color:#791F1F}.b-b{background:#E6F1FB;color:#0C447C}
+.tabs{display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:1.25rem}
+.tab{padding:8px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#6b7280}
+.tab.on{color:#1D9E75;border-bottom-color:#1D9E75}
+.bar-wrap{height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden;margin:6px 0}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.bar-g{background:#1D9E75}.bar-r{background:#E24B4A}
+.vrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+.vrow:last-child{border-bottom:none}
+.sec-lbl{font-size:11px;font-weight:500;letter-spacing:.05em;color:#9ca3af;text-transform:uppercase;margin-bottom:8px}
+.center{text-align:center}.big-icon{font-size:36px;margin-bottom:12px}
+.link-coord{font-size:12px;color:#9ca3af;text-align:center;margin-top:1.5rem;cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
+.lock-overlay{background:#f9f8f5;border:1px solid #e5e7eb;border-radius:12px;padding:1.5rem;text-align:center;margin-bottom:1rem}
+.aviso-comunicar{background:#EAF3DE;color:#27500A;border-radius:8px;padding:12px 16px;font-size:13px;margin-top:16px;line-height:1.6}
+.voto-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.voto-card{border:2px solid #e5e7eb;border-radius:12px;padding:16px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.voto-card:hover{background:#f9f8f5}
+.voto-card.sel-sim{border-color:#1D9E75;background:#E1F5EE}
+.voto-card.sel-nao{border-color:#E24B4A;background:#FCEBEB}
+.voto-card .voto-emoji{font-size:28px;display:block;margin-bottom:8px}
+.voto-card .voto-label{font-size:13px;font-weight:500;color:#1a1a1a}
+.voto-card .voto-desc{font-size:11px;color:#6b7280;margin-top:3px;line-height:1.4}
+.passo{display:none}.passo.ativo{display:block}
+.passo-indicador{display:flex;align-items:center;gap:6px;margin-bottom:16px}
+.passo-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;border:1.5px solid #e5e7eb;color:#9ca3af}
+.passo-dot.feito{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.passo-dot.atual{border-color:#1D9E75;color:#1D9E75}
+.passo-linha{flex:1;height:1px;background:#e5e7eb}
+.passo-linha.feita{background:#1D9E75}
+.obrigatorio-aviso{background:#FCEBEB;color:#791F1F;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px;text-align:center;display:none}
+select{width:auto;margin:0;font-size:13px;height:36px;border-radius:8px;border:1px solid #d1d5db;padding:0 8px;background:#fff;color:#1a1a1a;font-family:inherit}
+
+@media print{
+  body{background:#fff;padding:0;font-family:Arial,sans-serif}
+  .no-print,.page,.link-coord{display:none!important}
+  #printArea{display:block!important}
+  #printArea *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+#printArea{display:none}
+</style>
+</head>
+<body>
+
+<div id="pgVoto" class="page ativa">
+  <div id="vFormWrap">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+        <div style="width:42px;height:42px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌡️</div>
+        <div>
+          <div style="font-size:17px;font-weight:500">Consulta de Opinião</div>
+          <div style="font-size:12px;color:#6b7280">Substituição dos ventiladores por ar condicionado — Copa</div>
+        </div>
+      </div>
+      <p style="margin-bottom:10px">Os ventiladores da copa não estão resolvendo o problema do calor na hora do almoço. Manifeste sua opinião sobre a substituição por <strong style="color:#1a1a1a">ar condicionado</strong>.</p>
+      <div class="warn" id="prazoAviso"></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-n" id="vTotalSim" style="color:#1D9E75">0</div><div class="stat-l">A favor</div></div>
+        <div class="stat"><div class="stat-n" id="vTotalNao" style="color:#E24B4A">0</div><div class="stat-l">Contra</div></div>
+      </div>
+    </div>
+
+    <div class="card" id="vFormCard">
+      <div class="passo-indicador">
+        <div class="passo-dot atual" id="dot1">1</div>
+        <div class="passo-linha" id="linha1"></div>
+        <div class="passo-dot" id="dot2">2</div>
+      </div>
+
+      <div id="passo1" class="passo ativo">
+        <h3>Passo 1 — Qual é a sua posição?</h3>
+        <p style="font-size:13px;margin-bottom:4px">Selecione uma opção para continuar:</p>
+        <div class="voto-opcoes">
+          <div class="voto-card" id="cardSim" onclick="selecionarVoto('sim')">
+            <span class="voto-emoji">👍</span>
+            <div class="voto-label">Sou a favor</div>
+            <div class="voto-desc">Quero a substituição pelo ar condicionado</div>
+          </div>
+          <div class="voto-card" id="cardNao" onclick="selecionarVoto('nao')">
+            <span class="voto-emoji">👎</span>
+            <div class="voto-label">Sou contra</div>
+            <div class="voto-desc">Prefiro manter os ventiladores</div>
+          </div>
+        </div>
+        <div class="obrigatorio-aviso" id="avisoObrig">⚠️ Selecione sua posição antes de continuar.</div>
+        <button class="btn btn-disabled" id="btnProximo" onclick="irPasso2()">Continuar →</button>
+      </div>
+
+      <div id="passo2" class="passo">
+        <h3>Passo 2 — Sua identificação</h3>
+        <div id="resumoVoto" style="border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:14px;text-align:center"></div>
+        <label>Nome</label>
+        <input type="text" id="fNome" placeholder="Seu nome">
+        <div class="errmsg" id="eNome"></div>
+        <label>Sobrenome</label>
+        <input type="text" id="fSobre" placeholder="Seu sobrenome">
+        <div class="errmsg" id="eSobre"></div>
+        <label>Setor onde você trabalha</label>
+        <input type="text" id="fSetor" placeholder="Ex: Financeiro, RH, TI, Jurídico...">
+        <div class="errmsg" id="eSetor"></div>
+        <div class="info">Cada servidor pode votar apenas uma vez. Seu nome, setor e posição ficarão registrados.</div>
+        <button class="btn btn-g" onclick="votar()">✅ Confirmar minha posição</button>
+        <button class="btn" onclick="voltarPasso1()" style="margin-top:6px">← Alterar minha posição</button>
+      </div>
+    </div>
+
+    <div class="card" id="vEncerrado" style="display:none">
+      <div class="center">
+        <div class="big-icon">🔒</div>
+        <h3>Votação encerrada</h3>
+        <p>O prazo para participação foi encerrado. Obrigado a todos que participaram!</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="vSucesso" style="display:none">
+    <div class="card center">
+      <div id="vSuccessIcon" class="big-icon"></div>
+      <h3 id="vSuccessTitle"></h3>
+      <p>Obrigado, <strong id="vNomeSucesso" style="color:#1a1a1a"></strong>! Sua posição foi registrada com sucesso.</p>
+      <div class="aviso-comunicar">📢 Favor comunicar a outros interessados para que também possam participar desta consulta.</div>
+    </div>
+  </div>
+
+  <div id="vDuplicado" style="display:none">
+    <div class="card center">
+      <div class="big-icon">⚠️</div>
+      <h3>Participação já registrada</h3>
+      <p><strong id="vNomeDup" style="color:#1a1a1a"></strong> já registrou sua posição nesta consulta anteriormente.</p>
+      <button class="btn" style="margin-top:16px" onclick="voltarInicio()">Voltar</button>
+    </div>
+  </div>
+
+  <p class="link-coord" onclick="irCoord()">Acesso da coordenação</p>
+</div>
+
+<div id="pgCoord" class="page">
+  <div id="cLogin">
+    <div class="lock-overlay">
+      <div style="font-size:28px;margin-bottom:10px">🔐</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:6px">Área restrita</div>
+      <p style="margin-bottom:16px">Exclusivo para servidores da coordenação.</p>
+      <label style="text-align:left">Senha</label>
+      <input type="password" id="cSenha" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')loginCoord()">
+      <div class="errmsg" id="eSenha"></div>
+      <button class="btn btn-g" onclick="loginCoord()">Entrar</button>
+      <button class="btn" onclick="irVoto()">Voltar à votação</button>
+      <p style="font-size:11px;color:#9ca3af;margin-top:10px">Senha padrão: <code>coord2025</code></p>
+    </div>
+  </div>
+
+  <div id="cPainel" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:16px;font-weight:500">Painel da coordenação</div>
+      <button class="btn" style="width:auto;padding:4px 14px;font-size:12px;margin:0" onclick="sairCoord()">Sair</button>
+    </div>
+    <div class="tabs">
+      <div class="tab on" onclick="aba(this,'tResumo')">Resumo</div>
+      <div class="tab" onclick="aba(this,'tLista')">Participantes</div>
+      <div class="tab" onclick="aba(this,'tConfig')">Configurar</div>
+    </div>
+
+    <div id="tResumo">
+      <div class="card">
+        <div class="sec-lbl">Resultado geral</div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px" id="adminStats"></div>
+        <div class="sec-lbl">A favor da substituição</div>
+        <div class="bar-wrap"><div class="bar-fill bar-g" id="barSim"></div></div>
+        <div style="font-size:12px;color:#6b7280;text-align:right;margin-bottom:10px" id="barSimLabel"></div>
+        <div class="sec-lbl">Contra a substituição</div>
+        <div class="bar-wrap"><div class="bar-fill bar-r" id="barNao"></div></div>
+        <div style="font-size:12px;color:#6b7280;text-align:right" id="barNaoLabel"></div>
+      </div>
+      <div class="card">
+        <div class="sec-lbl">Participação por setor</div>
+        <div id="setorBars"></div>
+      </div>
+      <button class="btn btn-g" onclick="exportar()">📄 Exportar relatório (.txt)</button>
+      <button class="btn" onclick="exportarPDF()" style="background:#4f46e5;color:#fff;border-color:#4f46e5;margin-top:8px">🖨️ Exportar resumo em PDF</button>
+      <button class="btn btn-r" onclick="encerrar()" id="btnEncerrar">Encerrar votação agora</button>
+    </div>
+
+    <div id="tLista" style="display:none">
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <input type="text" id="busca" placeholder="Buscar nome ou setor..." onkeyup="renderLista()" style="flex:1;min-width:140px;margin:0">
+          <select id="filtroVoto" onchange="renderLista()">
+            <option value="">Todos</option>
+            <option value="sim">A favor</option>
+            <option value="nao">Contra</option>
+          </select>
+        </div>
+        <div id="listaVotantes"></div>
+      </div>
+    </div>
+
+    <div id="tConfig" style="display:none">
+      <div class="card">
+        <div class="sec-lbl">Prazo de encerramento</div>
+        <input type="datetime-local" id="cPrazo">
+        <button class="btn" onclick="salvarPrazo()">Salvar prazo</button>
+      </div>
+      <div class="card">
+        <div class="sec-lbl" style="color:#E24B4A">Zona de perigo</div>
+        <button class="btn btn-r" onclick="resetar()">Apagar todos os dados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESSÃO PDF -->
+<div id="printArea">
+  <div style="max-width:700px;margin:0 auto;padding:32px 40px;font-family:Arial,sans-serif;color:#1a1a1a">
+    <!-- Cabeçalho -->
+    <div style="border-bottom:3px solid #1D9E75;padding-bottom:16px;margin-bottom:24px">
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Secretaria / Coordenação de Infraestrutura</div>
+      <h1 style="font-size:22px;font-weight:700;margin-bottom:4px;color:#1a1a1a">Consulta de Opinião — Copa</h1>
+      <div style="font-size:14px;color:#374151">Substituição dos Ventiladores por Ar Condicionado</div>
+    </div>
+
+    <!-- Meta info -->
+    <table style="width:100%;font-size:12px;margin-bottom:24px;border-collapse:collapse">
+      <tr>
+        <td style="padding:4px 0;color:#6b7280;width:140px">Gerado em:</td>
+        <td id="pGerado" style="color:#1a1a1a;font-weight:500"></td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;color:#6b7280">Prazo da consulta:</td>
+        <td id="pPrazo" style="color:#1a1a1a;font-weight:500"></td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;color:#6b7280">Status:</td>
+        <td id="pStatus" style="font-weight:500"></td>
+      </tr>
+    </table>
+
+    <!-- Resultado principal -->
+    <div style="margin-bottom:24px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:12px">Resultado Geral</div>
+      <div style="display:flex;gap:12px;margin-bottom:16px">
+        <div style="flex:1;border:2px solid #1D9E75;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:36px;font-weight:700;color:#1D9E75" id="pSimNum">0</div>
+          <div style="font-size:12px;color:#374151;margin-top:4px">A favor da substituição</div>
+          <div style="font-size:18px;font-weight:600;color:#1D9E75;margin-top:2px" id="pSimPct">0%</div>
+        </div>
+        <div style="flex:1;border:2px solid #E24B4A;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:36px;font-weight:700;color:#E24B4A" id="pNaoNum">0</div>
+          <div style="font-size:12px;color:#374151;margin-top:4px">Contra a substituição</div>
+          <div style="font-size:18px;font-weight:600;color:#E24B4A;margin-top:2px" id="pNaoPct">0%</div>
+        </div>
+        <div style="flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:16px;text-align:center;background:#f9f8f5">
+          <div style="font-size:36px;font-weight:700;color:#1a1a1a" id="pTotal">0</div>
+          <div style="font-size:12px;color:#374151;margin-top:4px">Total de participantes</div>
+        </div>
+      </div>
+
+      <!-- Barra visual -->
+      <div style="height:20px;border-radius:10px;overflow:hidden;display:flex;background:#f3f4f6;margin-bottom:8px">
+        <div id="pBarSim" style="background:#1D9E75;height:100%;transition:width .3s"></div>
+        <div id="pBarNao" style="background:#E24B4A;height:100%;transition:width .3s"></div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:11px;color:#6b7280">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#1D9E75;border-radius:2px;display:inline-block"></span>A favor</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#E24B4A;border-radius:2px;display:inline-block"></span>Contra</span>
+      </div>
+    </div>
+
+    <!-- Resultado por setor -->
+    <div style="margin-bottom:24px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:12px">Resultado por Setor</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#f3f4f6">
+            <th style="text-align:left;padding:8px 10px;font-weight:600;color:#374151;border-radius:4px 0 0 4px">Setor</th>
+            <th style="text-align:center;padding:8px 10px;font-weight:600;color:#1D9E75">A favor</th>
+            <th style="text-align:center;padding:8px 10px;font-weight:600;color:#E24B4A">Contra</th>
+            <th style="text-align:center;padding:8px 10px;font-weight:600;color:#374151">Total</th>
+          </tr>
+        </thead>
+        <tbody id="pSetorTabela"></tbody>
+      </table>
+    </div>
+
+    <!-- Rodapé -->
+    <div style="border-top:1px solid #e5e7eb;padding-top:16px;font-size:11px;color:#9ca3af;line-height:1.6">
+      Este documento é um resumo da consulta de opinião realizada entre os servidores sobre a substituição dos ventiladores por ar condicionado na copa. Os dados devem ser encaminhados à Coordenação de Infraestrutura para avaliação e tomada de decisão.
+    </div>
+  </div>
+</div>
+
+<script>
+const SENHA='coord2025';
+let votoSelecionado=null;
+
+function carregarState(){
+  try{const s=localStorage.getItem('abaixo_v4');if(s)return JSON.parse(s);}catch(e){}
+  const d=new Date();d.setDate(d.getDate()+14);
+  return{votantes:[],prazo:d.toISOString(),aberta:true};
+}
+let S=carregarState();
+function salvarState(){try{localStorage.setItem('abaixo_v4',JSON.stringify(S));}catch(e){}}
+function estaAberta(){return S.aberta&&new Date()<new Date(S.prazo);}
+
+function selecionarVoto(op){
+  votoSelecionado=op;
+  document.getElementById('cardSim').className='voto-card'+(op==='sim'?' sel-sim':'');
+  document.getElementById('cardNao').className='voto-card'+(op==='nao'?' sel-nao':'');
+  document.getElementById('avisoObrig').style.display='none';
+  const btn=document.getElementById('btnProximo');
+  btn.className=op==='sim'?'btn btn-g':'btn btn-r';
+  btn.textContent=op==='sim'?'Continuar — Sou a favor →':'Continuar — Sou contra →';
+}
+
+function irPasso2(){
+  if(!votoSelecionado){document.getElementById('avisoObrig').style.display='block';return;}
+  document.getElementById('passo1').classList.remove('ativo');
+  document.getElementById('passo2').classList.add('ativo');
+  document.getElementById('dot1').className='passo-dot feito';
+  document.getElementById('dot1').textContent='✓';
+  document.getElementById('linha1').className='passo-linha feita';
+  document.getElementById('dot2').className='passo-dot atual';
+  const r=document.getElementById('resumoVoto');
+  if(votoSelecionado==='sim'){r.style.background='#E1F5EE';r.style.color='#085041';r.textContent='👍 Você optou por: Sou a FAVOR da substituição';}
+  else{r.style.background='#FCEBEB';r.style.color='#791F1F';r.textContent='👎 Você optou por: Sou CONTRA a substituição';}
+  document.getElementById('fNome').focus();
+}
+
+function voltarPasso1(){
+  document.getElementById('passo2').classList.remove('ativo');
+  document.getElementById('passo1').classList.add('ativo');
+  document.getElementById('dot1').className='passo-dot atual';
+  document.getElementById('dot1').textContent='1';
+  document.getElementById('linha1').className='passo-linha';
+  document.getElementById('dot2').className='passo-dot';
+  ['eNome','eSobre','eSetor'].forEach(id=>document.getElementById(id).textContent='');
+}
+
+function irVoto(){
+  document.getElementById('pgVoto').classList.add('ativa');
+  document.getElementById('pgCoord').classList.remove('ativa');
+  renderVoto();
+}
+function irCoord(){
+  document.getElementById('pgVoto').classList.remove('ativa');
+  document.getElementById('pgCoord').classList.add('ativa');
+  const ok=sessionStorage.getItem('admin')==='1';
+  document.getElementById('cLogin').style.display=ok?'none':'block';
+  document.getElementById('cPainel').style.display=ok?'block':'none';
+  if(ok)renderAdmin();
+}
+
+function renderVoto(){
+  const dl=new Date(S.prazo);
+  document.getElementById('prazoAviso').textContent='⏰ Prazo: '+dl.toLocaleString('pt-BR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('vTotalSim').textContent=S.votantes.filter(v=>v.voto==='sim').length;
+  document.getElementById('vTotalNao').textContent=S.votantes.filter(v=>v.voto==='nao').length;
+  document.getElementById('vEncerrado').style.display=estaAberta()?'none':'block';
+  document.getElementById('vFormCard').style.display=estaAberta()?'block':'none';
+}
+
+function votar(){
+  const nome=document.getElementById('fNome').value.trim();
+  const sobre=document.getElementById('fSobre').value.trim();
+  const setor=document.getElementById('fSetor').value.trim();
+  let ok=true;
+  document.getElementById('eNome').textContent=nome?'':'Preencha o nome.';if(!nome)ok=false;
+  document.getElementById('eSobre').textContent=sobre?'':'Preencha o sobrenome.';if(!sobre)ok=false;
+  document.getElementById('eSetor').textContent=setor?'':'Informe o seu setor.';if(!setor)ok=false;
+  if(!ok)return;
+  const nomeCompleto=nome+' '+sobre;
+  if(S.votantes.find(v=>v.nome.toLowerCase()===nomeCompleto.toLowerCase()&&v.setor.toLowerCase()===setor.toLowerCase())){
+    document.getElementById('vNomeDup').textContent=nomeCompleto;
+    document.getElementById('vFormWrap').style.display='none';
+    document.getElementById('vDuplicado').style.display='block';
+    return;
+  }
+  S.votantes.push({nome:nomeCompleto,setor,voto:votoSelecionado,data:new Date().toISOString()});
+  salvarState();
+  document.getElementById('vNomeSucesso').textContent=nomeCompleto;
+  document.getElementById('vSuccessIcon').textContent=votoSelecionado==='sim'?'👍':'👎';
+  document.getElementById('vSuccessTitle').textContent=votoSelecionado==='sim'?'Voto a favor registrado!':'Voto contra registrado!';
+  document.getElementById('vFormWrap').style.display='none';
+  document.getElementById('vSucesso').style.display='block';
+}
+
+function voltarInicio(){
+  ['vSucesso','vDuplicado'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('vFormWrap').style.display='block';
+  votoSelecionado=null;
+  document.getElementById('cardSim').className='voto-card';
+  document.getElementById('cardNao').className='voto-card';
+  document.getElementById('passo2').classList.remove('ativo');
+  document.getElementById('passo1').classList.add('ativo');
+  document.getElementById('dot1').className='passo-dot atual';
+  document.getElementById('dot1').textContent='1';
+  document.getElementById('linha1').className='passo-linha';
+  document.getElementById('dot2').className='passo-dot';
+  const btn=document.getElementById('btnProximo');
+  btn.className='btn btn-disabled';btn.textContent='Continuar →';
+  document.getElementById('fNome').value='';
+  document.getElementById('fSobre').value='';
+  document.getElementById('fSetor').value='';
+  ['eNome','eSobre','eSetor'].forEach(id=>document.getElementById(id).textContent='');
+  renderVoto();
+}
+
+function loginCoord(){
+  const v=document.getElementById('cSenha').value;
+  if(v===SENHA){
+    sessionStorage.setItem('admin','1');
+    document.getElementById('eSenha').textContent='';
+    document.getElementById('cLogin').style.display='none';
+    document.getElementById('cPainel').style.display='block';
+    renderAdmin();
+  } else {document.getElementById('eSenha').textContent='Senha incorreta.';}
+}
+function sairCoord(){sessionStorage.removeItem('admin');irVoto();}
+
+function aba(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['tResumo','tLista','tConfig'].forEach(i=>document.getElementById(i).style.display='none');
+  document.getElementById(id).style.display='block';
+  if(id==='tLista')renderLista();
+  if(id==='tConfig')renderConfig();
+  if(id==='tResumo')renderAdmin();
+}
+
+function renderAdmin(){
+  const total=S.votantes.length;
+  const sim=S.votantes.filter(v=>v.voto==='sim').length;
+  const nao=S.votantes.filter(v=>v.voto==='nao').length;
+  const pctSim=total?Math.round((sim/total)*100):0;
+  const pctNao=total?Math.round((nao/total)*100):0;
+  const status=estaAberta()?'<span class="badge b-g">Aberta</span>':'<span class="badge b-r">Encerrada</span>';
+  document.getElementById('adminStats').innerHTML=`
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total de votos</div></div>
+    <div class="stat"><div class="stat-n" style="color:#1D9E75">${sim}</div><div class="stat-l">A favor</div></div>
+    <div class="stat"><div class="stat-n" style="color:#E24B4A">${nao}</div><div class="stat-l">Contra</div></div>`;
+  document.getElementById('barSim').style.width=pctSim+'%';
+  document.getElementById('barSimLabel').textContent=sim+' votos ('+pctSim+'%)';
+  document.getElementById('barNao').style.width=pctNao+'%';
+  document.getElementById('barNaoLabel').textContent=nao+' votos ('+pctNao+'%)';
+  const cnt={};
+  S.votantes.forEach(v=>{const k=v.setor.trim();if(!cnt[k])cnt[k]={sim:0,nao:0};cnt[k][v.voto]++;});
+  const sorted=Object.entries(cnt).sort((a,b)=>(b[1].sim+b[1].nao)-(a[1].sim+a[1].nao));
+  document.getElementById('setorBars').innerHTML=sorted.length?sorted.map(([s,c])=>{
+    const t=c.sim+c.nao;
+    return`<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:#6b7280">${s}</span>
+        <span><span style="color:#1D9E75;font-weight:500">${c.sim} a favor</span> · <span style="color:#E24B4A;font-weight:500">${c.nao} contra</span></span>
+      </div>
+      <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:#f3f4f6">
+        ${c.sim?`<div style="width:${Math.round((c.sim/t)*100)}%;background:#1D9E75"></div>`:''}
+        ${c.nao?`<div style="width:${Math.round((c.nao/t)*100)}%;background:#E24B4A"></div>`:''}
+      </div>
+    </div>`;
+  }).join(''):'<p style="font-size:13px;color:#9ca3af">Nenhum voto ainda.</p>';
+  const btn=document.getElementById('btnEncerrar');
+  if(btn)btn.style.display=(S.aberta&&estaAberta())?'block':'none';
+}
+
+function renderLista(){
+  const q=(document.getElementById('busca').value||'').toLowerCase();
+  const fv=document.getElementById('filtroVoto').value;
+  const f=S.votantes.filter(v=>(v.nome.toLowerCase().includes(q)||v.setor.toLowerCase().includes(q))&&(!fv||v.voto===fv));
+  document.getElementById('listaVotantes').innerHTML=f.length?f.map(v=>`
+    <div class="vrow">
+      <div><div style="font-weight:500">${v.nome}</div><div style="font-size:11px;color:#6b7280">${v.setor}</div></div>
+      <div style="text-align:right">
+        <span class="badge ${v.voto==='sim'?'b-g':'b-r'}">${v.voto==='sim'?'A favor':'Contra'}</span>
+        <div style="font-size:10px;color:#9ca3af;margin-top:3px">${new Date(v.data).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    </div>`).join(''):'<p style="font-size:13px;color:#9ca3af">Nenhum resultado.</p>';
+}
+
+function renderConfig(){
+  const dl=new Date(S.prazo);
+  document.getElementById('cPrazo').value=new Date(dl.getTime()-dl.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+function salvarPrazo(){
+  const v=document.getElementById('cPrazo').value;
+  if(!v){alert('Selecione uma data.');return;}
+  S.prazo=new Date(v).toISOString();salvarState();
+  alert('Prazo salvo: '+new Date(S.prazo).toLocaleString('pt-BR'));
+}
+function encerrar(){
+  if(!confirm('Encerrar a votação agora? Esta ação não pode ser desfeita.'))return;
+  S.aberta=false;salvarState();alert('Votação encerrada com sucesso.');renderAdmin();
+}
+function resetar(){
+  if(!confirm('ATENÇÃO: apagará TODOS os votos. Continuar?'))return;
+  if(!confirm('Tem certeza? Esta ação é irreversível.'))return;
+  const d=new Date();d.setDate(d.getDate()+14);
+  S={votantes:[],prazo:d.toISOString(),aberta:true};salvarState();
+  alert('Dados apagados.');renderAdmin();
+}
+function exportar(){
+  const dl=new Date(S.prazo);
+  const sim=S.votantes.filter(v=>v.voto==='sim');
+  const nao=S.votantes.filter(v=>v.voto==='nao');
+  const total=S.votantes.length;
+  const cnt={};S.votantes.forEach(v=>{const k=v.setor.trim();if(!cnt[k])cnt[k]={sim:0,nao:0};cnt[k][v.voto]++;});
+  let t=`RELATÓRIO — CONSULTA DE OPINIÃO\nSubstituição de Ventiladores por Ar Condicionado — Copa\n${'='.repeat(54)}\n\n`;
+  t+=`Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+  t+=`Prazo: ${dl.toLocaleString('pt-BR')}\n`;
+  t+=`Status: ${estaAberta()?'Aberta':'Encerrada'}\n\n`;
+  t+=`RESULTADO\n${'-'.repeat(30)}\n`;
+  t+=`Total de participantes: ${total}\n`;
+  t+=`A favor da substituição: ${sim.length} (${total?Math.round((sim.length/total)*100):0}%)\n`;
+  t+=`Contra a substituição:   ${nao.length} (${total?Math.round((nao.length/total)*100):0}%)\n\n`;
+  t+=`RESULTADO POR SETOR\n${'-'.repeat(30)}\n`;
+  Object.entries(cnt).sort((a,b)=>(b[1].sim+b[1].nao)-(a[1].sim+a[1].nao)).forEach(([s,c])=>{t+=`${s}: ${c.sim} a favor, ${c.nao} contra\n`;});
+  t+=`\nLISTA DE PARTICIPANTES\n${'-'.repeat(30)}\n`;
+  S.votantes.forEach((v,i)=>t+=`${i+1}. ${v.nome} — ${v.setor} — ${v.voto==='sim'?'A FAVOR':'CONTRA'} — ${new Date(v.data).toLocaleString('pt-BR')}\n`);
+  t+=`\n${'='.repeat(54)}\nEncaminhar à Coordenação de Infraestrutura para avaliação.\n`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
+  a.download='consulta_copa_'+new Date().toISOString().slice(0,10)+'.txt';
+  a.click();
+}
+function exportarPDF(){
+  const total=S.votantes.length;
+  const sim=S.votantes.filter(v=>v.voto==='sim').length;
+  const nao=S.votantes.filter(v=>v.voto==='nao').length;
+  const pctSim=total?Math.round((sim/total)*100):0;
+  const pctNao=total?Math.round((nao/total)*100):0;
+  const dl=new Date(S.prazo);
+
+  // Preenche dados do relatório
+  document.getElementById('pGerado').textContent=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('pPrazo').textContent=dl.toLocaleString('pt-BR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const stEl=document.getElementById('pStatus');
+  stEl.textContent=estaAberta()?'Aberta':'Encerrada';
+  stEl.style.color=estaAberta()?'#1D9E75':'#E24B4A';
+
+  document.getElementById('pSimNum').textContent=sim;
+  document.getElementById('pSimPct').textContent=pctSim+'%';
+  document.getElementById('pNaoNum').textContent=nao;
+  document.getElementById('pNaoPct').textContent=pctNao+'%';
+  document.getElementById('pTotal').textContent=total;
+  document.getElementById('pBarSim').style.width=pctSim+'%';
+  document.getElementById('pBarNao').style.width=pctNao+'%';
+
+  // Tabela por setor
+  const cnt={};
+  S.votantes.forEach(v=>{const k=v.setor.trim();if(!cnt[k])cnt[k]={sim:0,nao:0};cnt[k][v.voto]++;});
+  const sorted=Object.entries(cnt).sort((a,b)=>(b[1].sim+b[1].nao)-(a[1].sim+a[1].nao));
+  const tbody=document.getElementById('pSetorTabela');
+  if(sorted.length){
+    tbody.innerHTML=sorted.map(([s,c],i)=>`
+      <tr style="background:${i%2===0?'#fff':'#f9f8f5'}">
+        <td style="padding:7px 10px;color:#1a1a1a">${s}</td>
+        <td style="padding:7px 10px;text-align:center;color:#1D9E75;font-weight:600">${c.sim}</td>
+        <td style="padding:7px 10px;text-align:center;color:#E24B4A;font-weight:600">${c.nao}</td>
+        <td style="padding:7px 10px;text-align:center;color:#374151;font-weight:500">${c.sim+c.nao}</td>
+      </tr>`).join('');
+    // Linha de total
+    tbody.innerHTML+=`<tr style="background:#f3f4f6;font-weight:700">
+      <td style="padding:7px 10px;color:#1a1a1a">Total</td>
+      <td style="padding:7px 10px;text-align:center;color:#1D9E75">${sim}</td>
+      <td style="padding:7px 10px;text-align:center;color:#E24B4A">${nao}</td>
+      <td style="padding:7px 10px;text-align:center;color:#374151">${total}</td>
+    </tr>`;
+  } else {
+    tbody.innerHTML='<tr><td colspan="4" style="padding:12px 10px;color:#9ca3af;text-align:center">Nenhum voto registrado.</td></tr>';
+  }
+
+  // Imprime
+  window.print();
+}
+
+renderVoto();
+</script>
+</body>
+</html>
