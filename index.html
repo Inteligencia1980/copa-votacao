@@ -123,9 +123,9 @@ select{width:auto;margin:0;font-size:13px;height:36px;border-radius:8px;border:1
         <input type="text" id="fSobre" placeholder="Seu sobrenome">
         <div class="errmsg" id="eSobre"></div>
         <label>Setor onde você trabalha</label>
-        <input type="text" id="fSetor" placeholder="Ex: Financeiro, RH, TI, Jurídico...">
+        <input type="text" id="fSetor" placeholder="Ex: CAD, COPRO, COAET, COFAT...">
         <div class="errmsg" id="eSetor"></div>
-        <div class="info">Cada servidor pode votar apenas uma vez. Seu nome, setor e posição ficarão registrados.</div>
+        <div class="info">Cada servidor, Colaborador, Prestador pode votar apenas uma vez. Seu nome, setor e posição ficarão registrados.</div>
         <button class="btn btn-g" onclick="votar()">✅ Confirmar minha posição</button>
         <button class="btn" onclick="voltarPasso1()" style="margin-top:6px">← Alterar minha posição</button>
       </div>
@@ -166,7 +166,7 @@ select{width:auto;margin:0;font-size:13px;height:36px;border-radius:8px;border:1
     <div class="lock-overlay">
       <div style="font-size:28px;margin-bottom:10px">🔐</div>
       <div style="font-size:15px;font-weight:500;margin-bottom:6px">Área restrita</div>
-      <p style="margin-bottom:16px">Exclusivo para servidores da coordenação.</p>
+      <p style="margin-bottom:16px">Exclusiva</p>
       <label style="text-align:left">Senha</label>
       <input type="password" id="cSenha" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')loginCoord()">
       <div class="errmsg" id="eSenha"></div>
